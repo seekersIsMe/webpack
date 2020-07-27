@@ -55,6 +55,20 @@ module.exports ={
     ```
     npx webpack --config <configName>
     ```
-4. webpack 默认支持js模块，但是css、html或者其他文件就需要插件或者loader
-5. css的loader: css-loader、style-loader、less\less-loader、autoprefixer\postcss-loader(给css加前缀,需要postcss.config.js的配置文件)
-6. css的插件：mini-css-extract-plugin（做css抽离的，将css抽离为一个文件，通过link标签的方式引入）
+
+## css的处理
+1. css例如@import等语法处理：css-loader
+2. css加入到html中，有style-loader、mini-css-extract-plugin（做css抽离的，将css抽离为一个文件，通过link标签的方式引入）
+3. css自动加前缀：autoprefixer\postcss-loader(给css加前缀,需要postcss.config.js的配置文件)
+4. css压缩： Optimize-css-assets-webpack-Plugin
+ * 优化项：
+ ```
+ optimization: {
+     new UgliftJsPlugin({
+         cache: true, //是否缓存
+         parallel:true, // 是否并发打包
+         sourceMap: true // 是否开启sourcemap,做源码映射
+     }),
+     new OptimizeCSSAssetsPlugin({}) // 压缩css，必须添加这一项，不然上面的UgliftJsPlugin就不会压缩js了
+ }
+ ```
