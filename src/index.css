@@ -1,0 +1,6 @@
+/* @import一定要逗号结束，不要忘记了 */
+@import './color.css'; 
+body{
+    background-color: aquamarine;
+    display: flex;
+}
