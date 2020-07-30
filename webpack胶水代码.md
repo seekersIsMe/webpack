@@ -64,11 +64,103 @@ module.exports ={
  * 优化项：
  ```
  optimization: {
-     new UgliftJsPlugin({
+     minimizer: [
+         new UgliftJsPlugin({
          cache: true, //是否缓存
          parallel:true, // 是否并发打包
          sourceMap: true // 是否开启sourcemap,做源码映射
-     }),
-     new OptimizeCSSAssetsPlugin({}) // 压缩css，必须添加这一项，不然上面的UgliftJsPlugin就不会压缩js了
+        }),
+        new OptimizeCSSAssetsPlugin({}) // 压缩css，必须添加这一项，不然上面的UgliftJsPlugin就不会压缩js了
+     ]
  }
  ```
+
+## js处理
+1. es6语法转换
+ * babel-loader、@babel/core（babel核心模块） @babel/preset-env（转化模块）
+ * @babel/plugin-transform-runtime (运行转化的包), 
+ * @babel/runtime(上线需要的)，例如模块转译后的的代码中出现了一些公共的工具函数，可能会重复出现在一些模块里，导致编译后的代码体积变大。Babel 为了解决这个问题，提供了单独的包 babel-runtime 供编译模块复用工具函数
+ * @babel/polyfill, js补丁包
+2. eslint 代码编写规范
+ * eslint、 eslint-loader
+3.  暴露全局变量，
+ * expose-loader是内联loader
+    ```
+    import $ from 'expose-loader?$!jquery'
+
+    ```
+ * `new webpack.providePlugin({
+        $:'jquery'
+    })`
+
+## 图片处理
+ 1. file-loader
+ 2. html-withimg-loader
+
+## 多入口多出口
+```
+const path = require('path');
+const HtmlWebpackPlugin = require ('html-webpack-plugin')
+module.exports = {
+    entry: { // 多个入口
+        home: './src/index.js',
+        other: './src/other.js'
+    },
+    output:{
+        filename: '[name][hash:8].js', // [name] 入口js名字
+        path: path.resolve(__dirname, 'build')
+    },
+    plugins: [
+        new HtmlWebpackPlugin({
+            template: './src/index.html', // 指定html模板
+            filename: 'index.html',  // 打包后的文件名称
+            hash: true, //打上hash戳
+            minify: { // 做html的压缩
+                removeAttributeQuotes: true, // 删除html中属性双引号
+                collapseWhitespace: true // 折叠空行
+            },
+            chunks: ['home'] // 将对应入口的js加到html中
+        }),
+        new HtmlWebpackPlugin({
+            template: './src/index.html', // 指定html模板
+            filename: 'other.html',  // 打包后的文件名称
+            hash: true, //打上hash戳
+            minify: { // 做html的压缩
+                removeAttributeQuotes: true, // 删除html中属性双引号
+                collapseWhitespace: true // 折叠空行
+            },
+            chunks: ['other']  //将对应入口的js加到html中
+        }),
+    ]
+
+}
+
+```
+
+## sourcemap 源码映射
+> 有四种配置
+1. devtool: 'source-map' // 会单独生成一个sourcemap文件，出错了会标识错误的行和列，大而全
+2. devtool: 'eval-source-map' // 不会生成单独的sourcemap文件，会显示行和列
+3. devtool: 'cheap-module-source-map'  // 不会产生列，但是会有一个单独sourcemap文件
+4. devtool: 'cheap-module-eval-source-map' // 不会产生文件，集成在打包后的文件内，不会产生列
+
+## watch监控代码变化，代码一发生变化就打包
+```
+watch: true, // 是否开启
+watchOptions: { // 监控选项
+    poll: 1000, //  每秒检查一次变动,毫秒为单位
+    aggreat: 500, // 防抖 一直输入代码
+    ignored: /node_modules/    // 不需要监控的文件 
+}
+```
+
+##  定义环境变量
+ 1. webpack.DefinePlugin插件，webpack插件 
+ ```
+ webpack.DefinePlugin({
+     DEV: JSON.stringify('production')
+ })
+ ```
+ 
+## 合并配置代码
+> 使用webpack-merge
