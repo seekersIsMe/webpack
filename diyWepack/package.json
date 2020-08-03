@@ -5,5 +5,8 @@
   "license": "MIT",
   "bin": {
     "diyWepack": "./bin/diywebpack.js"
+  },
+  "dependencies": {
+    "acorn": "^7.3.1"
   }
 }
