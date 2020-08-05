@@ -4,6 +4,8 @@ const acorn = require('acorn')
 const traverse = require('@babel/traverse').default
 const t = require('@babel/types')
 const generator = require('@babel/generator').default
+const ejs = require('ejs')
+const { POINT_CONVERSION_UNCOMPRESSED } = require('constants')
 module.exports = class Compiler {
     constructor (config) {
         this.config = config
@@ -14,8 +16,10 @@ module.exports = class Compiler {
     }
     run () {
         console.log('配置', this.root)
-        // 传入入口文件的绝对路径
+        // 传入入口文件的绝对路径，构建模块依赖
         this.buildModule(path.resolve(this.root, this.entryId), true)
+        // 将代码块组装写入文件
+        this.emitFile()
     }
     // 构建模块
     /*
@@ -24,7 +28,7 @@ module.exports = class Compiler {
     */
     buildModule(url, isEntry) {
         // 同步获取源码
-        let soucerCode = fs.readFileSync(url)
+        let soucerCode =this.getSource(url)
         console.log(soucerCode.toString())
         // 获取源码的相对根目录的相对路径, 例如用'./src/index.js' 作为index.js模块的key值
         let moduleName = './' + path.relative(this.root, url)
@@ -37,6 +41,11 @@ module.exports = class Compiler {
                 this.buildModule(path.join(this.root, p), false)
             })
         }
+    }
+    // 获取源码
+    getSource (url) {
+        let soucerCode = fs.readFileSync(url)
+        return soucerCode
     }
     /**
      * 解析源码 AST解析语法树
@@ -80,5 +89,20 @@ module.exports = class Compiler {
             moduleCode,
             dependencies
         }
+    }
+    // 发送文件，将组装好的文件写入磁盘
+    emitFile() {
+        let templateUrl = path.resolve(__dirname, 'template.ejs')
+        let template = this.getSource(templateUrl)
+        console.log(template)
+        let code = ejs.render(template.toString(), {
+           modules:  this.modules,
+           entryId: this.entryId
+        })
+        console.log()
+        // console.log(code)
+        let writePath = path.join(this.config.output.path,this.config.output.filename)
+        console.log(writePath)
+        fs.writeFileSync(writePath, code.trim())
     }
 }

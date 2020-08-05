@@ -1,18 +1,21 @@
+
+> 本文之所以叫宏任务、宏任务队列、微任务队列、微任务，只是将两者区分开来 
 ### 事件循环
 > 三个概念
 * 调用栈，先进后出
-* 宏任务队列
+* 宏任务队列（存放宏任务的，队列先进先出）
 * 微任务队列
-
-#### 宏队列，macrotask，也叫tasks
+#### 异步任务又分为宏任务和微任务
+> 宏任务，macrotask，也叫tasks
 * setTimeout
 * setInterval
 * setImmediate (Node独有)
 * requestAnimationFrame (浏览器独有)
 * I/O
+* DOM/Web events (onclick, onkeydown, XMLHttpRequest etc)
 * UI rendering (浏览器独有)
 
-#### 微队列，microtask，也叫jobs
+> 微任务，microtask，也叫jobs
 * process.nextTick (Node独有)
 * Promise
 * Object.observe
@@ -78,7 +81,7 @@
  为了更好说明，microtask表示代码中微任务，macrotask表示宏任务
 
 1. 将script宏任务放入调用栈，执行同步代码，所以先打印1
-2. 接着遇到macrotask1（setTimeout）第一个宏任务，将其加入宏任务队列的尾部
+2. 接着遇到macrotask1（setTimeout,因为是0秒，所以立马加入到宏任务队列中）第一个宏任务，将其加入宏任务队列的尾部
 3. 接着遇到microtask1（promise）第一个微任务，new Promise在实例的过程中执行代码都是同步进行的，只有回调then()才是微任务，所以打印3，并将then加到了微任务队列中
 4. 接着遇到调用b函数，所以先打印了5
 5. 接着遇到macrotask2（setTimeout）第二个宏任务，将其加到红任务队列的尾部
@@ -101,8 +104,35 @@
 22. 接着执行微任务microtask4，打印12，至此该微任务执行完成，并从微任务队列中删除，此时微任务队列为空，至此第二轮事件循环执行完成，并从宏任务队列中删除
 23. 接着执行下一轮事件循环，从宏任务队列取出第一个宏任务，也就是macrotask2，执行该宏任务中同步代码，打印6
 
+#### dom事件回调函数是宏任务，那么见下代码：
+```
+console.log(1);
+new Promise((resolve, reject) => {
+resolve(3)
+}).then(() => {
+console.log(2);
+})
+var button = document.querySelector(".button");
+button.addEventListener('click', () => { console.log(3); })
+button.click()
+// 1 3 2
+```
+按照上面说的执行规则，按理说打印顺序是 123，但运行的结果是1 3 2，那么问题出在哪里呢，那是因为人工合成（synthetic）的事件派发（dispatch）是同步执行的，包括执行click()和dispatchEvent()这两种方式。直接 domEle.click() 和 真的在页面上点击然后触发事件回调应该是不一样的。所以上面的代码执行顺序就像下面的：
+```
+console.log(1);
+new Promise((resolve, reject) => {
+resolve(3)
+}).then(() => {
+console.log(2);
+})
+console.log(3)
+```
+
+
 
 
 #### vue.nextTick的原理
 * Vue nextTick其实就是将dom更新后的操作当成微任务加到dom更新微任务的后面，保证其执行的顺序，再不行就使用setTimeout宏任务代替，在下一轮事件循环中执行，这也是为什么Promise，MutationObserver的优先级比setTimeout高
 
+
+参考文章：[第一篇](https://www.zeolearn.com/magazine/javascript-how-is-callback-execution-strategy-for-promises-different-than-dom-events-callback)

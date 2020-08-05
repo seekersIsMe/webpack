@@ -7,7 +7,7 @@ const {CleanWebpackPlugin} = require('clean-webpack-plugin') // 清除目录
 const CopyWebpackPlugin = require('copy-webpack-plugin') // 复制
 const webpack = require('webpack')
 module.exports ={
-    mode: 'production', //打包模式，production development
+    mode: 'development', //打包模式，production development
     entry: './src/index.js', //入口，从哪里开始打包
     output: {
         // filename: 'bundle.js', // 打包后的文件名
