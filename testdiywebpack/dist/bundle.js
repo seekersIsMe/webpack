@@ -1,4 +1,4 @@
-(function(modules) { // webpackBootstrap
+ (function(modules) { // webpackBootstrap
  	// The module cache
  	var installedModules = {};
 
@@ -86,10 +86,25 @@
 /************************************************************************/
  ({
    
-	"./src\index.js":(function(module, exports, __webpack_require__) {eval("const other = __webpack_require__("./src\\other.js");
+	"./src/index.js":(function(module, exports, __webpack_require__) {eval(`const other = __webpack_require__("./src/other.js");
 
-const a = __webpack_require__("./src\\util\\a.js");
+const a = __webpack_require__("./src/util/a.js");
 
-console.log(a + other);")} ),
+__webpack_require__("./src/index.less");
+
+console.log(a + other);`)} ),
+   
+	"./src/other.js":(function(module, exports, __webpack_require__) {eval(`const b = __webpack_require__("./src/util/b.js");
+
+console.log(b);
+module.exports = 'other';`)} ),
+   
+	"./src/util/b.js":(function(module, exports, __webpack_require__) {eval(`module.exports = 'b';`)} ),
+   
+	"./src/util/a.js":(function(module, exports, __webpack_require__) {eval(`module.exports = 'a';`)} ),
+   
+	"./src/index.less":(function(module, exports, __webpack_require__) {eval(`var style = document.createElement('style');
+style.innerText = "body {\\n  background: red;\\n}\\n";
+document.head.appendChild(style);`)} ),
    
  });
