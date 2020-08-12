@@ -6,8 +6,21 @@ const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin')
 const {CleanWebpackPlugin} = require('clean-webpack-plugin') // 清除目录
 const CopyWebpackPlugin = require('copy-webpack-plugin') // 复制
 const webpack = require('webpack')
+const glob = require('glob')
+class testPlugin {
+    apply(compiler) {
+        compiler.hooks.done.tap('testPlugin', (stats) =>{
+            const list = glob.sync(path.join(stats.compilation.outputOptions.path, `./**/*.{js.map,}`))
+            // console.log('compiler对象',stats)
+        })
+        compiler.hooks.emit.tap('test', (stats)=>{
+            // console.log('独显',stats)
+        })
+    }
+}
+
 module.exports ={
-    mode: 'development', //打包模式，production development
+    mode: 'production', //打包模式，production development
     entry: './src/index.js', //入口，从哪里开始打包
     output: {
         // filename: 'bundle.js', // 打包后的文件名
@@ -37,6 +50,7 @@ module.exports ={
     //        new OptimizeCSSAssetsPlugin({}) // 压缩css，必须添加这一项，不然上面的UgliftJsPlugin就不会压缩js了
     //     ]
     // },
+    devtool: 'source-map',
     plugins: [
         new HtmlWebpackPlugin(
             {
@@ -65,11 +79,16 @@ module.exports ={
                 { from: './doc', to: './doc' }
             ]
         }),
+        new testPlugin()
         // 
     //    new webpack.DllReferencePlugin({
     //        manifest: path.resolve(__dirname, 'dist', 'manifest.json')
     //    }) 
     ],
+    
+    resolveLoader: {
+        modules: ['node_modules', path.resolve(__dirname, 'loaders')]
+    },
     // 模块
     module: {
         rules: [ //转换的规则
@@ -134,21 +153,27 @@ module.exports ={
             //     },
             // },
             {
-                test: /\.m?js$/,
+                test: /\.js$/,
                 exclude: /(node_modules|bower_components)/, //排除
                 include: path.resolve(__dirname, 'src'), // 处理src目录下的js
-                use: {
-                    loader: 'babel-loader',
-                    options: {
-                        presets: ['@babel/preset-env'], //预设用@babel/preset-env这个插件转换js
-                        //小的插件
-                        plugins: [
-                            ["@babel/plugin-proposal-decorators", { "legacy": true }],
-                            ["@babel/plugin-proposal-class-properties", { "loose" : true }],
-                            "@babel/plugin-transform-runtime"
-                        ]
+                use: [
+                    {
+                        loader: 'test-loader'
                     },
-                }
+                    {
+                        loader: 'babel-loader',
+                        options: {
+                            presets: ['@babel/preset-env'], //预设用@babel/preset-env这个插件转换js
+                            //小的插件
+                            plugins: [
+                                ["@babel/plugin-proposal-decorators", { "legacy": true }],
+                                ["@babel/plugin-proposal-class-properties", { "loose" : true }],
+                                "@babel/plugin-transform-runtime"
+                            ]
+                        },
+                    }
+                ] 
+                
             }
         ]
     }

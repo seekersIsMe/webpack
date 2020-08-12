@@ -153,6 +153,8 @@ watchOptions: { // 监控选项
     ignored: /node_modules/    // 不需要监控的文件 
 }
 ```
+* addDependency() 文件加入依赖，例如loader的引用的模板文件，43节课程，8分
+* cacheable(true) 开启缓存。例如loader有大量复杂的计算，做loader开发的时候
 
 ##  定义环境变量
  1. webpack.DefinePlugin插件，webpack插件 

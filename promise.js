@@ -2,10 +2,8 @@ function Promise2(resolver) {
     var self = this //保存this
     self.callbacks = [] //保存onResolve和onReject函数集合
     self.status = 'pending' //当前状态
-    this.id = '啊哈哈哈' + Math.random() * 10
     function resolve(value) {
         setTimeout(function() { //异步调用
-            console.log('缓存数组1',self.callbacks)
             if(self.status !== 'pending') {
                 return
             }
@@ -14,7 +12,7 @@ function Promise2(resolver) {
             for(var i = 0; i < self.callbacks.length; i++) {
                 self.callbacks[i].onResolved(value)
             }
-        }, 1000)
+        })
     }
     function reject(reason) {
         setTimeout(function() { //异步调用
@@ -26,7 +24,7 @@ function Promise2(resolver) {
             for(var i = 0; i < self.callbacks.length; i++) {
                 self.callbacks[i].onRejected(reason)
             }
-        }, 1000)
+        })
     }
     try {
         resolver(resolve, reject) //执行resolver函数
@@ -52,6 +50,7 @@ Promise2.prototype.then = function(onResolved, onRejected) {
                 try {
                      //调用then方法的onResolved回调
                     var x = onResolved(self.data)
+                    console.log(x)
                     //根据x的值修改promise2的状态
                     resolvePromise2(promise2, x, resolve, reject)
                 } catch(e) {
@@ -80,7 +79,6 @@ Promise2.prototype.then = function(onResolved, onRejected) {
     //promise状态为pending
     //需要等待promise的状态改变
     if(self.status === 'pending') {
-        console.log('缓存数组',self.callbacks)
         return promise2 = new Promise2(function(resolve, reject) {
             self.callbacks.push({
                 onResolved: function(value) {
@@ -116,6 +114,9 @@ function resolvePromise2(promise, x, resolve, reject) {
     if(promise === x) {
         return reject(new TypeError('Chaining cycle detected for promise!'))
     }
+    // 如果返回值是带有then属性的对象或者函数，则递归执行其then方法，当前的then返回的新promise的状态由这个返回值的状态决定，
+    // 这里是怎么做的呢，就是将这个新promise的resolve和reject一直递归传下去，这样就可以在递归中控制当前then返回的新promise的状态
+    // 如果是null或者非函数非对象则直接将这个新的promise状态改为成功，
     if((x !== null) && ((typeof x === 'object') || (typeof x === 'function'))) {
         try {
             then = x.then
@@ -134,42 +135,60 @@ function resolvePromise2(promise, x, resolve, reject) {
                 return resolve(x)
             }
         } catch(e) {
-if(thenCalledOrThrow) return
-                thenCalledOrThrow = true
-                return reject(e)
-        }
+                    if(thenCalledOrThrow) return
+                    thenCalledOrThrow = true
+                    return reject(e)
+                }
     } else {
             return resolve(x)
     }
 }
 
+/// 并行promise，then交替执行，刚开始执行队列里面只有a1和b1的then回调函数，并且这么多then的执行都是同步创建新promise，状态都是pendding,当第一个promise的resolve执行，下一个promise的then的回调函数进入执行队列，此时a1的then回调函数在b1的then回调函数的前面，所以先执行
+// a1的then执行完后，就改变a2的状态，也就是执行resolve2(),接着a2的then回调加到执行队列尾部，此时执行队列中有b1的then的回调和a2的then的回调，接着执行b1的then的回调，依次这样执行下去，所以最终看到的结果就是a和b这两个promise所引发的then执行是交替执行
+// new Promise2(resolve=>{
+//     resolve();
+// }).then(()=>{
+//     console.log('out 1');
+// }).then(()=>{
+//     console.log('out 2');
+// }).then(()=>{
+//     console.log('out 3');
+// }).then(()=>{
+//     console.log('out 4');
+// }).then(()=>{
+//     console.log('out 5');
+// }).then(()=>{
+//     console.log('out 6');
+// });
+// new Promise2(resolve=>{
+//     resolve();
+// }).then(()=>{
+//     console.log('inner 1');
+// }).then(()=>{
+//     console.log('inner 2');
+// }).then(()=>{
+//     console.log('inner 3');
+// }).then(()=>{
+//     console.log('inner 4');
+// }).then(()=>{
+//     console.log('inner 5');
+// }).then(()=>{
+//     console.log('inner 6');
+// });
+
+// 如果then返回的是一个带有then方法的对象，那么下个promise的状态由这个then执行结果所决定，
+// 其实就是then的两个参数函数的执行所决定，就是这两个函数来改变下个promise的状态并引起下个promise的then的两个函数参数的执行
 new Promise2(resolve=>{
-    resolve();
-}).then(()=>{
-    console.log('out 1');
-}).then(()=>{
-    console.log('out 2');
-}).then(()=>{
-    console.log('out 3');
-}).then(()=>{
-    console.log('out 4');
-}).then(()=>{
-    console.log('out 5');
-}).then(()=>{
-    console.log('out 6');
-});
-new Promise2(resolve=>{
-    resolve();
-}).then(()=>{
-    console.log('inner 1');
-}).then(()=>{
-    console.log('inner 2');
-}).then(()=>{
-    console.log('inner 3');
-}).then(()=>{
-    console.log('inner 4');
-}).then(()=>{
-    console.log('inner 5');
-}).then(()=>{
-    console.log('inner 6');
-});
+        resolve(1);
+    }).then((res) =>{
+        return {
+            then(resolve, reject) {
+                reject(20)
+            }
+        }
+    }).then(res=>{
+        // console.log(res)
+    }, res=>{
+        console.log(res)
+    })
