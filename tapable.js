@@ -1,4 +1,4 @@
-const {SyncHook, SyncBailHook,SyncWaterfallHook,SyncLoopHook,AsyncParallelHook, AsyncSeriesHook, AsyncParallelBailHook, AsyncSeriesWaterfallHook} = require('tapable')
+// const {SyncHook, SyncBailHook,SyncWaterfallHook,SyncLoopHook,AsyncParallelHook, AsyncSeriesHook, AsyncParallelBailHook, AsyncSeriesWaterfallHook} = require('tapable')
 
 // SyncHook 同步的钩子
 // SyncBailHook 同步的保险钩子，函数返回值不是undefinde就停止执行下面的钩子
@@ -14,4 +14,43 @@ const {SyncHook, SyncBailHook,SyncWaterfallHook,SyncLoopHook,AsyncParallelHook, 
 
 // 调用的时候也是对应有三种，call、callAsync、promise
 
-
+// 同步钩子
+const SyncHook = require('./SyncHook')
+let synhook = new SyncHook()
+synhook.tap('test', ()=>{
+    console.log('执行钩子函数')
+})
+function test () {
+    console.log('初始化')
+    synhook.call()
+    console.log('挂载')
+    console.log('更新数据')
+}
+test()
+// 节流函数
+function throttle (fn, delay) {
+    let timer = null
+    let flag = true
+    return function (...args) {
+        let context = this
+        if(!flag) return
+        flag = false
+        if(timer) clearTimeout(timer)
+        timer = setTimeout(() =>{
+            fn.apply(this, args)
+            flag = true
+        }, delay)
+    }
+}
+// 防抖函数
+function debounce (fn, delay){
+    let timer = null
+    return function (...args) {
+        if(timer) clearTimeout(timer)
+        let context = this
+        timer = setTimeout(() =>{
+            fn.apply(this, args)
+            flag = ture
+        }, delay)
+    }
+}

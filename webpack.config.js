@@ -7,15 +7,41 @@ const {CleanWebpackPlugin} = require('clean-webpack-plugin') // 清除目录
 const CopyWebpackPlugin = require('copy-webpack-plugin') // 复制
 const webpack = require('webpack')
 const glob = require('glob')
+const tapable = require('tapable')
 class testPlugin {
     apply(compiler) {
-        compiler.hooks.done.tap('testPlugin', (stats) =>{
-            const list = glob.sync(path.join(stats.compilation.outputOptions.path, `./**/*.{js.map,}`))
-            // console.log('compiler对象',stats)
+        if (compiler.hooks) {
+            compiler.hooks.compilation.tap('SendDistPlugin', (compilation) =>{
+                console.log('调用插件')
+                compilation.hooks.uploadMorePluginAfter = new tapable.SyncHook(["data"]) //
+                compilation.hooks.uploadMorePluginAfter.tap('uploadMorePlugin', (data) =>{
+                    console.log('插件回调1', data)
+                  })
+            })
+        } else {
+            compiler.plugin('compilation', (compilation) =>{
+                console.log('插件compilation', compilation)
+                compilation.plugin('uploadMorePluginAfter', (data, callback)=> {
+                    console.log('插件回调2',data)
+                    callback(null, data);
+                  });
+            })
+        }
+    }
+}
+class haha {
+    apply(compiler){
+        compiler.hooks.uploadMorePluginAfter = new tapable.SyncHook()
+        compiler.hooks.done.tap('haha', (state) =>{
+            console.log('父插件')
+            if (compiler.hooks) {
+                state.compilation.hooks.uploadMorePluginAfter.call('哈哈哈哈1')
+            } else {
+                compiler._plugins.uploadMorePluginAfter = new tapable.SyncHook()
+                compiler._plugins.uploadMorePluginAfter.call('哈哈哈哈2')
+            }
         })
-        compiler.hooks.emit.tap('test', (stats)=>{
-            // console.log('独显',stats)
-        })
+       
     }
 }
 
@@ -79,7 +105,8 @@ module.exports ={
                 { from: './doc', to: './doc' }
             ]
         }),
-        new testPlugin()
+        new testPlugin(),
+        new haha()
         // 
     //    new webpack.DllReferencePlugin({
     //        manifest: path.resolve(__dirname, 'dist', 'manifest.json')
