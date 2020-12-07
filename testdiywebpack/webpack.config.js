@@ -11,6 +11,7 @@ module.exports = {
             {
                 test: /\.less$/,
                 use: [
+                    // 使用自己写的loader,通过路径使用
                     path.resolve(__dirname, 'loader', 'style-loader.js'),
                     path.resolve(__dirname, 'loader', 'less-loader.js')
                 ]

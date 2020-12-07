@@ -128,6 +128,23 @@ console.log(2);
 console.log(3)
 ```
 
+#### Promise.resolve()
+下面代码生成一个新的 Promise 对象的实例p。由于字符串two不属于异步操作（判断方法是字符串对象不具有 then 方法），返回 Promise 实例的状态从一生成就是resolved，所以回调函数会立即执行。Promise.resolve()方法的参数，会同时传给回调函数。
+```
+setTimeout(function () {
+  console.log('three');
+}, 0);
+
+Promise.resolve('two').then(function (res) {
+  console.log(res);
+});
+
+console.log('one');
+
+// one
+// two
+// three
+``` 
 
 
 

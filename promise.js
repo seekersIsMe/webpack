@@ -108,6 +108,45 @@ Promise2.prototype.then = function(onResolved, onRejected) {
         })
     }
 }
+class Promise2 {
+    constructor (fn) {
+        this.status = 'pending'
+        this.resolveList = []
+        this.rejectList = []
+        let that = this
+        function resolve () {
+            that.status = 'resolve'
+        }
+        function reject () {}
+        fn(resolve, reject)
+    }
+}
+Promise2.prototype.all = function (promiseList) {
+    return new Promise2((resolve, reject)=>{
+        if(!Array.isArray(promiseList)){
+            reject('参数必须是数组') // 简化写，也可以是Iterator接口的数据，可以遍历其子元素
+        }
+        // 参数的子元素是promise,如果不是就调用Promise.resolve,将参数转化成Promise
+        let resList = [] 
+        for(let i =0; i<promiseList.length; i++) {
+            if(promiseList[i] instanceof Promise2) {
+                promiseList[i].then(res => {
+                    resList.push(res) 
+                },rej => {
+                    reject(rej)
+                })
+            } else {
+                Promise2.resolve(promiseList[i]).then(res => {
+                    resList.push(res) 
+                }, rej => {
+                    reject(rej)
+                })
+            }
+        }
+        resolve(resList)
+    })
+    
+}
 function resolvePromise2(promise, x, resolve, reject) {
     var then
     var thenCalledOrThrow = false
@@ -144,7 +183,7 @@ function resolvePromise2(promise, x, resolve, reject) {
     }
 }
 
-/// 并行promise，then交替执行，刚开始执行队列里面只有a1和b1的then回调函数，并且这么多then的执行都是同步创建新promise，状态都是pendding,当第一个promise的resolve执行，下一个promise的then的回调函数进入执行队列，此时a1的then回调函数在b1的then回调函数的前面，所以先执行
+/// 并行promise，then交替执行，刚开始执行队列里面只有a1和b1的then回调函数，并且这么多then的执行都是同步创建新promise，状态都是pendding,并且都是同步将回调函数push到数组中,当第一个promise的resolve执行，下一个promise的then的回调函数进入执行队列，此时a1的then回调函数在b1的then回调函数的前面，所以先执行
 // a1的then执行完后，就改变a2的状态，也就是执行resolve2(),接着a2的then回调加到执行队列尾部，此时执行队列中有b1的then的回调和a2的then的回调，接着执行b1的then的回调，依次这样执行下去，所以最终看到的结果就是a和b这两个promise所引发的then执行是交替执行
 // new Promise2(resolve=>{
 //     resolve();
