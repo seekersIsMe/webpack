@@ -1,0 +1,1 @@
+1. 经过测试 如果同时存在两个input，属于以下类型的两两组合，输入框回车不会导致页面重载，password number email search tel text
